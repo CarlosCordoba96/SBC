@@ -26,57 +26,14 @@
 	 			 (assert(tcorto))
 	 			 (assert(comprobar_inr)))
 
-	 			 (defrule regla_10
-	 			 	(tcorto)
-	 			 	?respuesta3 <- (respuesta3 ?respuesta3-read&normal)
-	 			 		=>
-	 			 		 (retract ?respuesta3)
-	 			 		(assert(regla_10)
-	 			 		)
-	 			 )
 	 			 (defrule regla_13
+           (tcorto)
 	 			 	(or
-	 			 		(regla_10)(regla_12)(regla_15)
+	 			 		(inr_alto)(inr_bajo)(inr_normal)
 	 			 	)
 	 			 	=>
-	 				(assert
-	 					(regla_13)
-	 				)
-
+	 				(assert(regla_13))
 	 	(printout t "Recetar paracetamol no mas de 1,5g al dia" crlf)
-	 			 )
-
-	 			 (defrule regla_11
-	 			  (tcorto)
-	 			  ?respuesta3 <- (respuesta3 ?respuesta3-read&alto)
-	 			 	 =>
-	 			 		(retract ?respuesta3)
-
-	 					(assert(regla_11))
-	 			 )
-
-	 			 (defrule regla_12
-	 			 	(regla_11)
-	 			 	=>
-	 				(printout t "Reducir dosis sintrom" crlf)
-	 				(assert(regla_12))
-	 			 )
-
-
-	 			 (defrule regla_14
-	 			  (tcorto)
-	 			  ?respuesta3 <- (respuesta3 ?respuesta3-read&bajo)
-	 			 	=>
-	 			 	 (retract ?respuesta3)
-	 			 	 (printout t "CORTO-BAJO" crlf)
-	 				 (assert(regla_14))
-
-	 			 )
-	 			 (defrule regla_15
-	 			 	(regla_14)
-	 			 	=>
-	 				(printout t "Aumentar dosis sintrom" crlf)
-	 				(assert(regla_15))
 	 			 )
 
 	 		(defrule t_largo
@@ -97,6 +54,7 @@
 	 	(printout t "¿Como está el nivel de INR del paciente?" crlf)
 	 	(assert (respuesta3 (read)))
 	 )
+
 	 ;TRATAMIENTO LARGO Y INR NORMAL
 	 			(defrule regla_4
 	 				(tratamientolargo)
@@ -155,19 +113,80 @@
 			?respuesta4 <- (respuesta4 ?respuesta1-read&arritmia)
 			=>
 			 (retract ?respuesta4)
-			 (printout t "ARRITMIA" crlf)
+       (assert(arritmia))
+       (assert(comprobar_inr))
 			 )
+
+       (defrule inr_normal
+         (or
+           (arritmia)(tcorto)(colesterol)
+         )
+         ?respuesta3 <- (respuesta3 ?respuesta3-read&normal)
+           =>
+            (retract ?respuesta3)
+            (assert(inr_normal))
+       )
+
+       (defrule inr_alto
+         (or
+           (arritmia)(tcorto)(colesterol)
+         )
+         ?respuesta3 <- (respuesta3 ?respuesta3-read&alto)
+           =>
+            (retract ?respuesta3)
+            (assert(inr_alto))
+            (printout t "Reducir dosis sintrom" crlf)
+       )
+
+       (defrule inr_bajo
+         (or
+           (arritmia)(tcorto)(colesterol)
+         )
+
+         ?respuesta3 <- (respuesta3 ?respuesta3-read&bajo)
+           =>
+            (retract ?respuesta3)
+            (printout t "Aumentar dosis sintrom" crlf)
+            (assert(inr_bajo))
+       )
+
+
+       (defrule atenolol
+         (arritmia)
+         (or
+           (inr_alto)(inr_bajo)(inr_normal))
+         =>
+         (printout t "Recetar Atenolol" crlf)
+         (assert(atenolol))
+
+
+       )
+
 
 			 (defrule colesterol
 			 	?respuesta4 <- (respuesta4 ?respuesta4-read&colesterol)
 			 	=>
 			 	 (retract ?respuesta4)
-				 (printout t "COLESTEROL" crlf)
+         (assert
+           (colesterol)
+         )
+         (assert(comprobar_inr))
 			 	 )
 
+(defrule pravastatina
+  (colesterol)
+  (or(inr_alto)(inr_bajo)(inr_normal))
+  =>
+  (printout t "Recetar Pravastatina" crlf)
+  (assert(pravastatina))
+)
 
-
-
+(defrule dieta
+  (pravastatina)
+  =>
+  (printout t "Comer alimentos bajos en grasa y en su mayoría de origen vegetal ( excluyendo los que sean ricos en vitamina k)" crlf)
+  (assert(dietac))
+)
 			 (defrule infecciones
 				?respuesta1 <- (respuesta1 ?respuesta1-read&infeccion)
 				=>
@@ -201,7 +220,7 @@
 				)
 
 				(defrule vitamina
-					(or(pantoprazol) )
+					(or(pantoprazol)(regla_21)(atenolol)(dietac) )
 					=>
 					(printout t "Dieta baja en Vitamina K" crlf)
 					)
