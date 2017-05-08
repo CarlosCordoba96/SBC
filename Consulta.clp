@@ -4,6 +4,38 @@
  (assert (respuesta1 (read)))
  )
 
+
+ (defrule anticonceptivos
+
+ 	?respuesta1 <- (respuesta1 ?respuesta1-read&anticonceptivos)
+   (mujer)
+ 	=>
+ 	 (retract ?respuesta1)
+   (assert(anticonceptivos))
+
+ 	  (printout t "¿Se podria prescindir del anticonceptivo oral sin obtener efectos adversos?" crlf)
+    (assert (respuesta10 (read)))
+   )
+
+   (defrule presc_si
+   	?respuesta10 <- (respuesta10 ?respuesta10-read&si)
+   	=>
+   	 (retract ?respuesta10)
+     (printout t "Usar anticonceptivos de barrera, como preservativos, diafragma, espermicidas, etc." crlf)
+   	 (assert(anticonceptivos_alternativos))
+     (assert(comprobar_inr))
+     )
+
+
+     (defrule presc_no
+     	?respuesta10 <- (respuesta10 ?respuesta10-read&no)
+     	=>
+     	 (retract ?respuesta10)
+       (printout t "Dosificar el sintrom y realizar controles muy frecuentemente" crlf)
+     	 (assert(controles))
+       (assert(comprobar_inr))
+       )
+
 (defrule fiebre_dolor
 	?respuesta1 <- (respuesta1 ?respuesta1-read&fiebre|dolor)
 	=>
@@ -119,7 +151,8 @@
 
        (defrule inr_normal
          (or
-           (arritmia)(tcorto)(colesterol)
+           (arritmia)(tcorto)(colesterol)(cistitis)(erictomicina)
+           (cefuroxima)(augmentine)(candidiasis)(anticonceptivos_alternativos)(controles)
          )
          ?respuesta3 <- (respuesta3 ?respuesta3-read&normal)
            =>
@@ -129,27 +162,38 @@
 
        (defrule inr_alto
          (or
-           (arritmia)(tcorto)(colesterol)
+           (arritmia)(tcorto)(colesterol)(cistitis)(erictomicina)
+           (cefuroxima)(augmentine)(candidiasis)(anticonceptivos_alternativos)(controles)
          )
          ?respuesta3 <- (respuesta3 ?respuesta3-read&alto)
            =>
             (retract ?respuesta3)
             (assert(inr_alto))
-            (printout t "Reducir dosis sintrom" crlf)
-       )
 
+       )
+        (defrule red_sint
+          (inr_alto)
+          =>
+            (printout t "Reducir dosis sintrom" crlf)
+            (assert(reducir_sintrom))
+        )
        (defrule inr_bajo
          (or
-           (arritmia)(tcorto)(colesterol)
+           (arritmia)(tcorto)(colesterol)(cistitis)(erictomicina)
+           (cefuroxima)(augmentine)(candidiasis)(anticonceptivos_alternativos)(controles)
          )
 
          ?respuesta3 <- (respuesta3 ?respuesta3-read&bajo)
            =>
             (retract ?respuesta3)
-            (printout t "Aumentar dosis sintrom" crlf)
             (assert(inr_bajo))
        )
-
+       (defrule aum_sint
+         (inr_bajo)
+         =>
+           (printout t "Aumentar dosis sintrom" crlf)
+           (assert(aumentar_sintrom))
+       )
 
        (defrule atenolol
          (arritmia)
@@ -187,27 +231,96 @@
   (printout t "Comer alimentos bajos en grasa y en su mayoría de origen vegetal ( excluyendo los que sean ricos en vitamina k)" crlf)
   (assert(dietac))
 )
+
 			 (defrule infecciones
 				?respuesta1 <- (respuesta1 ?respuesta1-read&infeccion)
 				=>
 				 (retract ?respuesta1)
-				 (printout t "AMO A VER2" crlf)
-				 (assert(fiebredolor)))
+				 (printout t "¿De que tipo de infeccion se trata?" crlf)
+     	 	(assert (respuesta6 (read))))
+
+        (defrule otorrinolaringologica
+          ?respuesta6 <- (respuesta6 ?respuesta4-read&otorrinolaringologica)
+          =>
+           (retract ?respuesta6)
+           (assert(otorrinolaringologica))
+        )
+
+        (defrule penicilina
+          (otorrinolaringologica)
+          =>
+          (printout t "¿Es alergico a la penicilina?" crlf)
+      	 	(assert (respuesta7 (read)))
+
+        )
+        (defrule si
+          ?respuesta7 <- (respuesta7 ?respuesta7-read&si)
+  				=>
+  				 (retract ?respuesta7)
+  				 (printout t "Recetar Erictomicina" crlf)
+          (assert
+            (erictomicina)
+          )
+          (assert(comprobar_inr))
+        )
+
+        (defrule no
+          ?respuesta7 <- (respuesta7 ?respuesta7-read&no)
+          =>
+           (retract ?respuesta7)
+           (assert(no_penicilina))
+           (printout t "¿Se ha tratado para esta enfermedad ya?" crlf)
+       	 	(assert (respuesta8 (read))
+          )
+        )
+        (defrule tratamientosi
+          ?respuesta8 <- (respuesta8 ?respuesta8-read&si)
+          =>
+           (retract ?respuesta8)
+           (printout t "Recetar Cefuroxima" crlf)
+           (assert(cefuroxima))
+           (assert(comprobar_inr))
+        )
+        (defrule tratamientono
+          ?respuesta8 <- (respuesta8 ?respuesta8-read&no)
+          =>
+           (retract ?respuesta8)
+           (printout t "Recetar Augmentine" crlf)
+           (assert(augmentine))
+           (assert(comprobar_inr))
+        )
+        (defrule candidiasis
+          (mujer)
+         ?respuesta6 <- (respuesta6 ?respuesta4-read&candidiasis)
+         =>
+          (retract ?respuesta6)
+        (assert(candidiasis))
+        (assert(comprobar_inr))
+          )
+          (defrule micomazol
+            (candidiasis)
+            =>
+            (printout t "Recetar Micomazol y realizar revision cada 2-3 dias." crlf)
+            (assert(micomazol))
+          )
 
 
+        (defrule cistitis
+         ?respuesta6 <- (respuesta6 ?respuesta4-read&cistitis)
+         =>
+          (retract ?respuesta6)
+          (assert(comprobar_inr))
+          (assert(cistitis))
+          )
 
-
-
-
-
-
-
-
-
-
-
-
-
+          (defrule fosfomicina
+            (cistitis)
+            (or
+              (inr_alto)(inr_bajo)(inr_normal))
+            =>
+            (printout t "Se receta Fosfomicina" crlf)
+            (assert(fosfomicina))
+          )
 
 			(defrule pantoprazol
 				(or(regla_5)(regla_8)(regla_9)(regla_13)
@@ -220,7 +333,8 @@
 				)
 
 				(defrule vitamina
-					(or(pantoprazol)(regla_21)(atenolol)(dietac) )
+					(or(pantoprazol)(regla_21)(atenolol)(dietac)(fosfomicina)(erictomicina)
+          (cefuroxima)(augmentine)(micomazol)(anticonceptivos_alternativos)(controles) )
 					=>
 					(printout t "Dieta baja en Vitamina K" crlf)
 					)

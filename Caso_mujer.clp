@@ -1,0 +1,3 @@
+(deffacts hechos
+	(mujer))
+
